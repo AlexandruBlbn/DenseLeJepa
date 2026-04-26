@@ -1,0 +1,62 @@
+# Frangi-Masked SIGReg pretraining config
+model:
+  encoder_name: "vit_small_patch8_224"  # timm name, patch_size=8
+  embed_dim: 384                          # ViT-S hidden dim
+  depth: 12
+  num_heads: 6
+  hierarchical_layers: [2, 5, 8, 11]      # layers for dense features
+  proj_dim: 128                           # projection head output dim
+  proj_hidden: 512                         # projection head hidden dim
+
+data:
+  train_path: "./data/xca/train"
+  val_path: "./data/xca/val"
+  image_size: 512
+  augmentation:
+    global_scale: [0.3, 1.0]
+    local_scale: [0.05, 0.3]
+    color_jitter: 0.4
+    grayscale_prob: 0.2
+  loader:
+    batch_size: 64
+    num_workers: 4
+    shuffle: true
+    pin_memory: true
+    drop_last: true
+
+frangi:
+  sigmas: [1, 3, 5, 7]                   # scales for vessel detection
+  beta: 0.5                               # blobness sensitivity
+  frangi_threshold: 0.05                  # vesselness floor
+  patch_vessel_weight_scale: 0.1          # w_p = min(1, mean_frangi / scale)
+
+loss:
+  sigreg_beta: 0.1                        # BHEP bandwidth
+  sigreg_knots: 17                        # quadrature knots
+  sigreg_proj_dim: 256                    # random projection dim for sketched SIGReg
+  vicreg_sim_coeff: 25.0                  # invariance weight
+  vicreg_std_coeff: 25.0                  # variance weight
+  vicreg_cov_coeff: 1.0                   # covariance weight
+  target_std: 1.0                         # target std for variance hinge
+  lambda_bg: 1.0                          # SIGReg base weight (before normalization)
+  lambda_vessel: 1.0                      # VICReg base weight (before normalization)
+  loss_ema_decay: 0.9                     # running mean decay for normalization
+
+training:
+  epochs: 300
+  warmup_epochs: 20
+  lr: 5.0e-4
+  weight_decay: 0.05
+  betas: [0.9, 0.999]
+  grad_clip: 1.0
+  mixed_precision: true
+
+logging:
+  log_freq: 10
+  use_wandb: false
+
+checkpoint:
+  save_every: 10
+  resume: null
+
+seed: 42
